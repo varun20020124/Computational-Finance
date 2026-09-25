@@ -70,6 +70,106 @@ bool approximatelyEqual(
     return fabs(first - second) < tolerance;
 }
 
+double interpolateRateForTime(
+    double time,
+    const vector<double>& maturities,
+    const vector<double>& interest_rates)
+{
+    if (maturities.empty() ||
+        maturities.size() != interest_rates.size())
+    {
+        return 0.0;
+    }
+
+    const double tolerance = 1e-10;
+
+    for (size_t i = 0; i < maturities.size(); i++)
+    {
+        if (fabs(maturities[i] - time) < tolerance)
+        {
+            return interest_rates[i];
+        }
+    }
+
+    bool lower_found = false;
+    bool upper_found = false;
+
+    double lower_time = 0.0;
+    double upper_time = 0.0;
+
+    double lower_rate = 0.0;
+    double upper_rate = 0.0;
+
+    for (size_t i = 0; i < maturities.size(); i++)
+    {
+        if (maturities[i] < time)
+        {
+            if (!lower_found ||
+                maturities[i] > lower_time)
+            {
+                lower_time = maturities[i];
+                lower_rate = interest_rates[i];
+                lower_found = true;
+            }
+        }
+
+        if (maturities[i] > time)
+        {
+            if (!upper_found ||
+                maturities[i] < upper_time)
+            {
+                upper_time = maturities[i];
+                upper_rate = interest_rates[i];
+                upper_found = true;
+            }
+        }
+    }
+
+    if (!lower_found && upper_found)
+    {
+        return upper_rate;
+    }
+
+    if (lower_found && !upper_found)
+    {
+        return lower_rate;
+    }
+
+    if (!lower_found && !upper_found)
+    {
+        return 0.0;
+    }
+
+    double weight =
+        (time - lower_time) /
+        (upper_time - lower_time);
+
+    return lower_rate +
+           weight * (upper_rate - lower_rate);
+}
+
+
+double yearFraction(
+    int start_month,
+    int start_day,
+    int start_year,
+    int end_month,
+    int end_day,
+    int end_year)
+{
+    int month_difference =
+        (end_year - start_year) * 12 +
+        (end_month - start_month);
+
+    double years =
+        month_difference / 12.0;
+
+    years +=
+        (end_day - start_day) / 365.0;
+
+    return years;
+}
+
 void runUnitTests()
 {
     int passed = 0;
@@ -264,6 +364,146 @@ int main()
     cout << "Number of observations: "
          << maturities.size()
          << endl;
+    cout << endl;
+cout << "Task 3: Arithmetic-Average Security" << endl;
 
+/*
+    Underlying bond:
+
+    Issued:      01/01/2010
+    Maturity:    01/01/2020
+    Face value:  100
+    Coupon rate: 5%
+    Frequency:   0.5 years
+*/
+
+Bond underlying_bond(
+    "01/01/2020",
+    0.5,
+    0.05);
+
+vector<string> valuation_dates;
+
+valuation_dates.push_back("01/01/2016");
+valuation_dates.push_back("01/01/2017");
+valuation_dates.push_back("01/01/2018");
+valuation_dates.push_back("01/01/2019");
+valuation_dates.push_back("01/01/2020");
+
+vector<double> bond_prices;
+
+double price_sum = 0.0;
+
+cout << fixed << setprecision(6);
+
+for (size_t i = 0;
+     i < valuation_dates.size();
+     i++)
+{
+    double price =
+        underlying_bond.Price(
+            100.0,
+            valuation_dates[i],
+            maturities,
+            interest_rates);
+
+    bond_prices.push_back(price);
+
+    price_sum += price;
+
+    cout << valuation_dates[i]
+         << " bond price: "
+         << price
+         << endl;
+}
+
+/*
+    Arithmetic average of the five
+    observed bond prices.
+*/
+
+double average_price =
+    price_sum / bond_prices.size();
+
+cout << "Arithmetic-average payoff: "
+     << average_price
+     << endl;
+
+/*
+    The payoff is made on 12/31/2020.
+
+    Discount the payoff back to the
+    purchase date of 08/03/2015.
+*/
+
+double payoff_time =
+    yearFraction(
+        8, 3, 2015,
+        12, 31, 2020);
+
+double discount_rate =
+    interpolateRateForTime(
+        payoff_time,
+        maturities,
+        interest_rates);
+
+double discount_factor =
+    exp(
+        -discount_rate *
+        payoff_time);
+
+double fair_value =
+    average_price *
+    discount_factor;
+
+double purchase_price = 98.0;
+
+cout << "Time from purchase to payoff: "
+     << payoff_time
+     << " years"
+     << endl;
+
+cout << "Interpolated discount rate: "
+     << discount_rate
+     << endl;
+
+cout << "Discount factor: "
+     << discount_factor
+     << endl;
+
+cout << "Fair value on 08/03/2015: "
+     << fair_value
+     << endl;
+
+cout << "Purchase price: "
+     << purchase_price
+     << endl;
+
+cout << "Fair value minus purchase price: "
+     << fair_value - purchase_price
+     << endl;
+
+if (fair_value > purchase_price)
+{
+    cout << "Conclusion: The security was purchased "
+         << "below its calculated fair value, so the "
+         << "investment was favorable under this "
+         << "valuation model."
+         << endl;
+}
+else if (fair_value < purchase_price)
+{
+    cout << "Conclusion: The security was purchased "
+         << "above its calculated fair value, so the "
+         << "investment was unfavorable under this "
+         << "valuation model."
+         << endl;
+}
+else
+{
+    cout << "Conclusion: The purchase price equals "
+         << "the calculated fair value."
+         << endl;
+}
     return 0;
 }
