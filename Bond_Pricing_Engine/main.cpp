@@ -5,7 +5,7 @@
 #include <cmath>
 #include <iomanip>
 #include "bond.h"
-
+#include <stdexcept>
 using namespace std;
 
 bool loadInterestRateCurve(
@@ -188,17 +188,12 @@ void runUnitTests()
         0.0);
 
     /*
-        Test 1
-
-        One-year semiannual 6% bond.
-
-        At zero interest rates:
-
-        coupon = 100 * 0.06 * 0.5 = 3
+        Test 1:
+        Regular semiannual bond at zero rates.
 
         Cash flows:
-            0.5 years -> 3
-            1.0 years -> 103
+        0.5 years -> 3
+        1.0 years -> 103
 
         Price = 106
     */
@@ -228,20 +223,14 @@ void runUnitTests()
     }
 
     /*
-        Test 2
+        Test 2:
+        Fractional first coupon period.
 
-        Valuation date: 01/01/2026
-        Maturity:       04/01/2026
+        01/01/2026 -> 04/01/2026 = 0.25 years
 
-        This is a 0.25-year stub.
+        Coupon = 100 * 0.06 * 0.25 = 1.5
 
-        coupon =
-            100 * 0.06 * 0.25
-            = 1.5
-
-        Price at zero rates =
-            100 + 1.5
-            = 101.5
+        Price at zero rates = 101.5
     */
 
     total++;
@@ -269,10 +258,9 @@ void runUnitTests()
     }
 
     /*
-        Test 3
-
+        Test 3:
         Homework convention:
-        price at maturity = par value.
+        price at maturity equals par value.
     */
 
     total++;
@@ -289,9 +277,7 @@ void runUnitTests()
             test_maturities,
             zero_rates);
 
-    if (approximatelyEqual(
-            maturity_price,
-            100.0))
+    if (approximatelyEqual(maturity_price, 100.0))
     {
         passed++;
     }
@@ -299,6 +285,209 @@ void runUnitTests()
     {
         cout << "Unit test 3 failed. Expected 100, got "
              << maturity_price << endl;
+    }
+
+    /*
+        Test 4:
+        Non-zero continuously compounded rates.
+
+        Constant zero rate = 7%.
+
+        Expected price:
+        3 * exp(-0.07 * 0.5)
+        + 103 * exp(-0.07 * 1.0)
+    */
+
+    total++;
+
+    vector<double> seven_percent_rates(
+        test_maturities.size(),
+        0.07);
+
+    double discounted_price =
+        test_bond.Price(
+            100.0,
+            "01/01/2026",
+            test_maturities,
+            seven_percent_rates);
+
+    double expected_discounted_price =
+        3.0 * exp(-0.07 * 0.5) +
+        103.0 * exp(-0.07);
+
+    if (approximatelyEqual(
+            discounted_price,
+            expected_discounted_price))
+    {
+        passed++;
+    }
+    else
+    {
+        cout << "Unit test 4 failed. Expected "
+             << expected_discounted_price
+             << ", got "
+             << discounted_price
+             << endl;
+    }
+
+    /*
+        Test 5:
+        Linear interpolation.
+
+        Curve:
+        T = 0.0 -> 0%
+        T = 0.5 -> 4%
+
+        At T = 0.25, interpolated rate = 2%.
+
+        Zero-coupon bond value:
+        100 * exp(-0.02 * 0.25)
+    */
+
+    total++;
+
+    vector<double> interpolation_maturities;
+
+    interpolation_maturities.push_back(0.0);
+    interpolation_maturities.push_back(0.5);
+    interpolation_maturities.push_back(1.0);
+
+    vector<double> interpolation_rates;
+
+    interpolation_rates.push_back(0.0);
+    interpolation_rates.push_back(0.04);
+    interpolation_rates.push_back(0.08);
+
+    Bond interpolation_bond(
+        "04/01/2026",
+        0.5,
+        0.0);
+
+    double interpolation_price =
+        interpolation_bond.Price(
+            100.0,
+            "01/01/2026",
+            interpolation_maturities,
+            interpolation_rates);
+
+    double expected_interpolation_price =
+        100.0 * exp(-0.02 * 0.25);
+
+    if (approximatelyEqual(
+            interpolation_price,
+            expected_interpolation_price))
+    {
+        passed++;
+    }
+    else
+    {
+        cout << "Unit test 5 failed. Expected "
+             << expected_interpolation_price
+             << ", got "
+             << interpolation_price
+             << endl;
+    }
+
+    /*
+        Test 6:
+        Valuation after maturity.
+
+        Bond should have no remaining value.
+    */
+
+    total++;
+
+    double expired_price =
+        maturity_bond.Price(
+            100.0,
+            "01/02/2026",
+            test_maturities,
+            zero_rates);
+
+    if (approximatelyEqual(expired_price, 0.0))
+    {
+        passed++;
+    }
+    else
+    {
+        cout << "Unit test 6 failed. Expected 0, got "
+             << expired_price << endl;
+    }
+
+    /*
+        Test 7:
+        Invalid interest-rate curve.
+
+        Maturity and rate vectors have
+        different sizes.
+    */
+
+    total++;
+
+    bool invalid_curve_caught = false;
+
+    vector<double> bad_maturities;
+    bad_maturities.push_back(0.5);
+    bad_maturities.push_back(1.0);
+
+    vector<double> bad_rates;
+    bad_rates.push_back(0.05);
+
+    try
+    {
+        test_bond.Price(
+            100.0,
+            "01/01/2026",
+            bad_maturities,
+            bad_rates);
+    }
+    catch (const invalid_argument&)
+    {
+        invalid_curve_caught = true;
+    }
+
+    if (invalid_curve_caught)
+    {
+        passed++;
+    }
+    else
+    {
+        cout << "Unit test 7 failed. "
+             << "Invalid curve was not rejected."
+             << endl;
+    }
+
+    /*
+        Test 8:
+        Invalid valuation date.
+    */
+
+    total++;
+
+    bool invalid_date_caught = false;
+
+    try
+    {
+        test_bond.Price(
+            100.0,
+            "bad-date",
+            test_maturities,
+            zero_rates);
+    }
+    catch (const invalid_argument&)
+    {
+        invalid_date_caught = true;
+    }
+
+    if (invalid_date_caught)
+    {
+        passed++;
+    }
+    else
+    {
+        cout << "Unit test 8 failed. "
+             << "Invalid date was not rejected."
+             << endl;
     }
 
     cout << "Unit tests passed: "
