@@ -423,7 +423,103 @@ inline void runUnitTests()
             << "Test 12 failed: invalid maturity."
             << std::endl;
     }
+        /*
+        Test 13:
+        Default Option constructor.
 
+        All parameters should be initialized
+        to zero through init().
+    */
+
+    total++;
+
+    Option default_option;
+
+    if (approximatelyEqual(default_option.getK(), 0.0) &&
+        approximatelyEqual(default_option.getS(), 0.0) &&
+        approximatelyEqual(default_option.getR(), 0.0) &&
+        approximatelyEqual(default_option.getT(), 0.0) &&
+        approximatelyEqual(default_option.getSigma(), 0.0))
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "Test 13 failed: default Option constructor."
+            << std::endl;
+    }
+
+
+    /*
+        Test 14:
+        Parameterized constructor and getters.
+    */
+
+    total++;
+
+    Option_Price parameter_option(
+        105.0,
+        110.0,
+        0.04,
+        2.0,
+        0.25,
+        'c');
+
+    if (approximatelyEqual(parameter_option.getK(), 105.0) &&
+        approximatelyEqual(parameter_option.getS(), 110.0) &&
+        approximatelyEqual(parameter_option.getR(), 0.04) &&
+        approximatelyEqual(parameter_option.getT(), 2.0) &&
+        approximatelyEqual(parameter_option.getSigma(), 0.25) &&
+        parameter_option.flag == 'c')
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "Test 14 failed: constructor/getters/flag."
+            << std::endl;
+    }
+
+
+    /*
+        Test 15:
+        Invalid option flag must also
+        be rejected by Binomial_Pricer().
+    */
+
+    total++;
+
+    bool invalid_binomial_flag_caught = false;
+
+    try
+    {
+        Option_Price invalid_binomial_option(
+            100.0,
+            100.0,
+            0.05,
+            1.0,
+            0.20,
+            'x');
+
+        invalid_binomial_option.Binomial_Pricer();
+    }
+    catch (const std::invalid_argument&)
+    {
+        invalid_binomial_flag_caught = true;
+    }
+
+    if (invalid_binomial_flag_caught)
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "Test 15 failed: invalid binomial flag."
+            << std::endl;
+    }
     std::cout
         << "Unit tests passed: "
         << passed
