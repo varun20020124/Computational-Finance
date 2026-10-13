@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-
+#include "MarketData.h"
 #include "Option.h"
 #include "BlackScholesModel.h"
 #include "Simulation.h"
@@ -230,6 +230,58 @@ int main()
 
     std::cout
         << "Saved to outputs/hedging_errors.csv"
+        << std::endl;
+        
+    std::cout << std::endl;
+    std::cout
+        << "Loading GOOG market data..."
+        << std::endl;
+
+    MarketData market_data(
+        "interest.csv",
+        "sec_GOOG.csv",
+        "op_GOOG.csv"
+    );
+
+    std::vector<MarketDataPoint> goog_data =
+        market_data.getOptionSeries(
+            "2011-07-05",
+            "2011-07-29",
+            "2011-09-17",
+            500.0,
+            'C'
+        );
+
+    std::cout
+        << "Matching GOOG observations: "
+        << goog_data.size()
+        << std::endl;
+
+    std::cout
+        << "First date: "
+        << goog_data.front().date
+        << std::endl;
+
+    std::cout
+        << "First stock price: "
+        << goog_data.front().stock_price
+        << std::endl;
+
+    std::cout
+        << "First option price: "
+        << goog_data.front().option_price
+        << std::endl;
+
+    std::cout
+        << "First risk-free rate: "
+        << goog_data.front().risk_free_rate
+        << std::endl;
+
+    std::cout
+        << "First time to maturity: "
+        << market_data.timeToMaturity(
+            goog_data.front().date,
+            "2011-09-17")
         << std::endl;
 
 
