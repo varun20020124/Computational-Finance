@@ -3,7 +3,7 @@
 
 #include "Option.h"
 #include "BlackScholesModel.h"
-
+#include "DeltaHedger.h"
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -384,6 +384,170 @@ inline void runSimulationTests()
 
     std::cout
         << "Simulation tests passed: "
+        << passed
+        << "/"
+        << total
+        << std::endl;
+}
+
+inline void runDeltaHedgerTests()
+{
+    int passed = 0;
+    int total = 0;
+
+    DeltaHedger hedger(0.1);
+
+    /*
+        Test 1:
+        Verify initial bank balance.
+
+        S0 = 100
+        V0 = 10
+        delta0 = 0.5
+
+        B0 = V0 - delta0*S0
+           = 10 - 50
+           = -40
+    */
+
+    total++;
+
+    std::vector<double> stock_prices;
+    stock_prices.push_back(100.0);
+    stock_prices.push_back(110.0);
+
+    std::vector<double> option_prices;
+    option_prices.push_back(10.0);
+    option_prices.push_back(15.0);
+
+    std::vector<double> deltas;
+    deltas.push_back(0.5);
+
+    std::vector<double> bank =
+        hedger.calculateBankBalances(
+            stock_prices,
+            option_prices,
+            deltas,
+            0.0
+        );
+
+    if (approximatelyEqual(
+            bank[0],
+            -40.0,
+            1e-10))
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "DeltaHedger Test 1 failed: "
+            << "expected B0 = -40, got "
+            << bank[0]
+            << std::endl;
+    }
+
+
+    /*
+        Test 2:
+        Verify hedging error.
+
+        With r = 0:
+
+        HE1 =
+            delta0*S1 + B0 - V1
+
+            = 0.5*110 - 40 - 15
+            = 0
+    */
+
+    total++;
+
+    std::vector<double> errors =
+        hedger.calculateHedgingErrors(
+            stock_prices,
+            option_prices,
+            deltas,
+            0.0
+        );
+
+    if (approximatelyEqual(
+            errors[1],
+            0.0,
+            1e-10))
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "DeltaHedger Test 2 failed: "
+            << "expected HE1 = 0, got "
+            << errors[1]
+            << std::endl;
+    }
+
+
+    /*
+        Test 3:
+        Verify rebalancing over multiple periods.
+    */
+
+    total++;
+
+    std::vector<double> stock2;
+    stock2.push_back(100.0);
+    stock2.push_back(102.0);
+    stock2.push_back(104.0);
+
+    std::vector<double> option2;
+    option2.push_back(10.0);
+    option2.push_back(11.0);
+    option2.push_back(12.0);
+
+    std::vector<double> delta2;
+    delta2.push_back(0.5);
+    delta2.push_back(0.6);
+
+    std::vector<double> errors2 =
+        hedger.calculateHedgingErrors(
+            stock2,
+            option2,
+            delta2,
+            0.0
+        );
+
+    /*
+        B0 = 10 - 0.5*100 = -40
+
+        B1 =
+            0.5*102 - 40 - 0.6*102
+            = -50.2
+
+        HE2 =
+            0.6*104 - 50.2 - 12
+            = 0.2
+    */
+
+    if (approximatelyEqual(
+            errors2[2],
+            0.2,
+            1e-10))
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "DeltaHedger Test 3 failed: "
+            << "expected HE2 = 0.2, got "
+            << errors2[2]
+            << std::endl;
+    }
+
+
+    std::cout
+        << "DeltaHedger tests passed: "
         << passed
         << "/"
         << total
