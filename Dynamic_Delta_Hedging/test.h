@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
+#include "Simulation.h"
 
 inline bool approximatelyEqual(
     double first,
@@ -258,6 +259,131 @@ inline void runBlackScholesTests()
 
     std::cout
         << "Black-Scholes tests passed: "
+        << passed
+        << "/"
+        << total
+        << std::endl;
+}
+
+inline void runSimulationTests()
+{
+    int passed = 0;
+    int total = 0;
+
+    Simulation simulation(
+        100.0,
+        0.4,
+        0.05,
+        0.24,
+        100,
+        1000
+    );
+
+    /*
+        Test 1:
+        Correct number of paths.
+    */
+
+    total++;
+
+    std::vector<std::vector<double> > paths =
+        simulation.generateStockPaths(42);
+
+    if (paths.size() == 1000)
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "Simulation Test 1 failed: expected 1000 paths."
+            << std::endl;
+    }
+
+    /*
+        Test 2:
+        Each path should contain
+        S0 plus 100 simulated observations.
+    */
+
+    total++;
+
+    if (!paths.empty() &&
+        paths[0].size() == 101)
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "Simulation Test 2 failed: expected 101 observations."
+            << std::endl;
+    }
+
+    /*
+        Test 3:
+        Every path starts at S0 = 100.
+    */
+
+    total++;
+
+    bool correct_initial_price = true;
+
+    for (std::size_t i = 0;
+         i < paths.size();
+         i++)
+    {
+        if (!approximatelyEqual(
+                paths[i][0],
+                100.0,
+                1e-10))
+        {
+            correct_initial_price = false;
+            break;
+        }
+    }
+
+    if (correct_initial_price)
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "Simulation Test 3 failed: incorrect initial stock price."
+            << std::endl;
+    }
+
+    /*
+        Test 4:
+        Fixed random seed should make
+        the simulation reproducible.
+    */
+
+    total++;
+
+    std::vector<std::vector<double> > paths_again =
+        simulation.generateStockPaths(42);
+
+    bool reproducible =
+        approximatelyEqual(
+            paths[0][1],
+            paths_again[0][1],
+            1e-12);
+
+    if (reproducible)
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "Simulation Test 4 failed: simulation not reproducible."
+            << std::endl;
+    }
+
+    std::cout
+        << "Simulation tests passed: "
         << passed
         << "/"
         << total
