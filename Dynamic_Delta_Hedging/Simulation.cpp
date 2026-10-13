@@ -121,3 +121,89 @@ void Simulation::writeStockPathsCSV(
 
     outfile.close();
 }
+
+std::vector<std::vector<double> >
+Simulation::generateOptionPricePaths(
+    const std::vector<std::vector<double> >& stock_paths,
+    const BlackScholesModel& model,
+    double risk_free_rate) const
+{
+    double dt =
+        T / static_cast<double>(steps);
+
+    std::vector<std::vector<double> > option_paths(
+        stock_paths.size(),
+        std::vector<double>(steps + 1, 0.0));
+
+    for (std::size_t path = 0;
+         path < stock_paths.size();
+         path++)
+    {
+        for (int step = 0;
+             step <= steps;
+             step++)
+        {
+            double tau =
+                T - step * dt;
+
+            if (tau < 0.0)
+            {
+                tau = 0.0;
+            }
+
+            option_paths[path][step] =
+                model.price(
+                    stock_paths[path][step],
+                    risk_free_rate,
+                    tau,
+                    sigma);
+        }
+    }
+
+    return option_paths;
+}
+
+
+void Simulation::writeOptionPathsCSV(
+    const std::vector<std::vector<double> >& paths,
+    const std::string& filename) const
+{
+    std::ofstream outfile(filename.c_str());
+
+    if (!outfile.is_open())
+    {
+        throw std::runtime_error(
+            "Could not open option-path output file.");
+    }
+
+    outfile << "path";
+
+    for (int step = 0;
+         step <= steps;
+         step++)
+    {
+        outfile << ",t" << step;
+    }
+
+    outfile << "\n";
+
+    for (std::size_t path = 0;
+         path < paths.size();
+         path++)
+    {
+        outfile << path;
+
+        for (std::size_t step = 0;
+             step < paths[path].size();
+             step++)
+        {
+            outfile
+                << ","
+                << paths[path][step];
+        }
+
+        outfile << "\n";
+    }
+
+    outfile.close();
+}

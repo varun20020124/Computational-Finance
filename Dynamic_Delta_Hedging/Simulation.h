@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include "BlackScholesModel.h"
 
 class Simulation
 {
@@ -28,6 +29,17 @@ public:
     generateStockPaths(unsigned int seed = 42) const;
 
     void writeStockPathsCSV(
+        const std::vector<std::vector<double> >& paths,
+        const std::string& filename
+    ) const;
+    std::vector<std::vector<double> >
+    generateOptionPricePaths(
+        const std::vector<std::vector<double> >& stock_paths,
+        const BlackScholesModel& model,
+        double risk_free_rate
+    ) const;
+
+    void writeOptionPathsCSV(
         const std::vector<std::vector<double> >& paths,
         const std::string& filename
     ) const;
