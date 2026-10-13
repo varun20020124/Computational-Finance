@@ -8,7 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 #include "Simulation.h"
-
+#include "MarketData.h"
 inline bool approximatelyEqual(
     double first,
     double second,
@@ -553,5 +553,122 @@ inline void runDeltaHedgerTests()
         << total
         << std::endl;
 }
+inline void runMarketDataTests()
+{
+    int passed = 0;
+    int total = 0;
 
+    MarketData market_data(
+        "interest.csv",
+        "sec_GOOG.csv",
+        "op_GOOG.csv"
+    );
+
+    /*
+        Test 1:
+        Required GOOG contract has 19 observations.
+    */
+
+    total++;
+
+    std::vector<MarketDataPoint> data =
+        market_data.getOptionSeries(
+            "2011-07-05",
+            "2011-07-29",
+            "2011-09-17",
+            500.0,
+            'C'
+        );
+
+    if (data.size() == 19)
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "MarketData Test 1 failed: expected 19 observations, got "
+            << data.size()
+            << std::endl;
+    }
+
+
+    /*
+        Test 2:
+        Verify first GOOG observation.
+    */
+
+    total++;
+
+    bool correct_first_row =
+        data.front().date == "2011-07-05"
+        &&
+        approximatelyEqual(
+            data.front().stock_price,
+            532.44,
+            1e-8
+        )
+        &&
+        approximatelyEqual(
+            data.front().option_price,
+            44.20,
+            1e-8
+        )
+        &&
+        approximatelyEqual(
+            data.front().risk_free_rate,
+            0.0019,
+            1e-10
+        );
+
+    if (correct_first_row)
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "MarketData Test 2 failed: incorrect first observation."
+            << std::endl;
+    }
+
+
+    /*
+        Test 3:
+        Verify trading-day time to maturity.
+
+        52 trading days / 252.
+    */
+
+    total++;
+
+    double tau =
+        market_data.timeToMaturity(
+            "2011-07-05",
+            "2011-09-17"
+        );
+
+    if (approximatelyEqual(
+            tau,
+            52.0 / 252.0,
+            1e-10
+        ))
+    {
+        passed++;
+    }
+    else
+    {
+        std::cout
+            << "MarketData Test 3 failed: incorrect time to maturity."
+            << std::endl;
+    }
+
+
+    std::cout
+        << "MarketData tests passed: "
+        << passed
+        << "/"
+        << total
+        << std::endl;
+}
 #endif

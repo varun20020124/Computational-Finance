@@ -30,6 +30,20 @@ public:
         const std::vector<double>& terminal_errors,
         const std::string& filename
     ) const;
+
+    std::vector<double> calculateHedgingErrors(
+    const std::vector<double>& stock_prices,
+    const std::vector<double>& option_prices,
+    const std::vector<double>& deltas,
+    const std::vector<double>& risk_free_rates
+    ) const;
+
+    std::vector<double> calculateBankBalances(
+        const std::vector<double>& stock_prices,
+        const std::vector<double>& option_prices,
+        const std::vector<double>& deltas,
+        const std::vector<double>& risk_free_rates
+    ) const;
 };
 
 #endif

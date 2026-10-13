@@ -152,3 +152,127 @@ void DeltaHedger::writeTerminalErrorsCSV(
 
     outfile.close();
 }
+
+std::vector<double>
+DeltaHedger::calculateBankBalances(
+    const std::vector<double>& stock_prices,
+    const std::vector<double>& option_prices,
+    const std::vector<double>& deltas,
+    const std::vector<double>& risk_free_rates) const
+{
+    std::size_t n =
+        stock_prices.size();
+
+    if (n == 0 ||
+        option_prices.size() != n ||
+        deltas.size() != n ||
+        risk_free_rates.size() != n)
+    {
+        throw std::invalid_argument(
+            "Invalid variable-rate hedge input dimensions.");
+    }
+
+    std::vector<double> bank(
+        n,
+        0.0
+    );
+
+    /*
+        Initial bank position:
+
+        B0 = V0 - delta0*S0
+    */
+
+    bank[0] =
+        option_prices[0]
+        - deltas[0] * stock_prices[0];
+
+
+    /*
+        Daily rebalance.
+
+        The project specifies that the cash
+        position grows using r_(i-1).
+    */
+
+    for (std::size_t i = 1;
+         i < n;
+         i++)
+    {
+        double grown_bank =
+            bank[i - 1]
+            * std::exp(
+                risk_free_rates[i - 1] * dt
+            );
+
+        double portfolio_value =
+            deltas[i - 1] * stock_prices[i]
+            + grown_bank;
+
+        bank[i] =
+            portfolio_value
+            - deltas[i] * stock_prices[i];
+    }
+
+    return bank;
+}
+
+
+std::vector<double>
+DeltaHedger::calculateHedgingErrors(
+    const std::vector<double>& stock_prices,
+    const std::vector<double>& option_prices,
+    const std::vector<double>& deltas,
+    const std::vector<double>& risk_free_rates) const
+{
+    std::size_t n =
+        stock_prices.size();
+
+    if (n == 0 ||
+        option_prices.size() != n ||
+        deltas.size() != n ||
+        risk_free_rates.size() != n)
+    {
+        throw std::invalid_argument(
+            "Invalid variable-rate hedge input dimensions.");
+    }
+
+    std::vector<double> bank =
+        calculateBankBalances(
+            stock_prices,
+            option_prices,
+            deltas,
+            risk_free_rates
+        );
+
+    std::vector<double> hedging_errors(
+        n,
+        0.0
+    );
+
+    /*
+        At t0 the hedge has just been
+        established, so HE0 = 0.
+    */
+
+    hedging_errors[0] =
+        0.0;
+
+    for (std::size_t i = 1;
+         i < n;
+         i++)
+    {
+        double grown_bank =
+            bank[i - 1]
+            * std::exp(
+                risk_free_rates[i - 1] * dt
+            );
+
+        hedging_errors[i] =
+            deltas[i - 1] * stock_prices[i]
+            + grown_bank
+            - option_prices[i];
+    }
+
+    return hedging_errors;
+}
