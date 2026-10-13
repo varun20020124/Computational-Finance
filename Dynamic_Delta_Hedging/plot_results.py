@@ -8,11 +8,10 @@ def read_path_csv(filename):
     with open(filename, "r") as file:
         reader = csv.reader(file)
 
-        # Skip header
+        # Skip header.
         next(reader)
 
         for row in reader:
-            # First column is the path number.
             values = [float(x) for x in row[1:]]
             paths.append(values)
 
@@ -25,13 +24,29 @@ def read_hedging_errors(filename):
     with open(filename, "r") as file:
         reader = csv.reader(file)
 
-        # Skip header
+        # Skip header.
         next(reader)
 
         for row in reader:
             errors.append(float(row[1]))
 
     return errors
+
+
+def read_task2_results(filename):
+    dates = []
+    pnl = []
+    hedged_pnl = []
+
+    with open(filename, "r") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            dates.append(row["date"])
+            pnl.append(float(row["PNL"]))
+            hedged_pnl.append(float(row["PNL_with_hedge"]))
+
+    return dates, pnl, hedged_pnl
 
 
 # --------------------------------------------------
@@ -50,9 +65,13 @@ hedging_errors = read_hedging_errors(
     "outputs/hedging_errors.csv"
 )
 
+dates, pnl, hedged_pnl = read_task2_results(
+    "outputs/result.csv"
+)
+
 
 # --------------------------------------------------
-# Time axis
+# Task 1 time axis
 #
 # T = 0.4
 # N = 100
@@ -75,7 +94,11 @@ times = [
 plt.figure(figsize=(10, 6))
 
 for path in stock_paths[:100]:
-    plt.plot(times, path, linewidth=0.8)
+    plt.plot(
+        times,
+        path,
+        linewidth=0.8
+    )
 
 plt.xlabel("Time (years)")
 plt.ylabel("Stock Price")
@@ -99,11 +122,17 @@ plt.close()
 plt.figure(figsize=(10, 6))
 
 for path in option_paths[:100]:
-    plt.plot(times, path, linewidth=0.8)
+    plt.plot(
+        times,
+        path,
+        linewidth=0.8
+    )
 
 plt.xlabel("Time (years)")
 plt.ylabel("Call Option Price")
-plt.title("100 Simulated Black-Scholes Option Price Paths")
+plt.title(
+    "100 Simulated Black-Scholes Option Price Paths"
+)
 
 plt.tight_layout()
 
@@ -130,7 +159,9 @@ plt.hist(
 
 plt.xlabel("Terminal Hedging Error")
 plt.ylabel("Frequency")
-plt.title("Distribution of Terminal Delta-Hedging Errors")
+plt.title(
+    "Distribution of Terminal Delta-Hedging Errors"
+)
 
 plt.tight_layout()
 
@@ -143,7 +174,60 @@ plt.close()
 
 
 # --------------------------------------------------
-# Summary statistics
+# Figure 4:
+# Task 2 real-data PNL comparison
+# --------------------------------------------------
+
+x = list(range(len(dates)))
+
+plt.figure(figsize=(10, 6))
+
+plt.plot(
+    x,
+    pnl,
+    marker="o",
+    label="Unhedged PNL"
+)
+
+plt.plot(
+    x,
+    hedged_pnl,
+    marker="o",
+    label="PNL with Delta Hedge"
+)
+
+plt.axhline(
+    0.0,
+    linewidth=1
+)
+
+plt.xticks(
+    x,
+    dates,
+    rotation=45,
+    ha="right"
+)
+
+plt.xlabel("Date")
+plt.ylabel("PNL")
+plt.title(
+    "GOOG Call Option: Unhedged vs Delta-Hedged PNL"
+)
+
+plt.legend()
+
+plt.tight_layout()
+
+plt.savefig(
+    "plots/goog_pnl_comparison.png",
+    dpi=300
+)
+
+plt.close()
+
+
+# --------------------------------------------------
+# Task 1 summary statistics
 # --------------------------------------------------
 
 mean_error = (
@@ -161,11 +245,38 @@ variance = (
 
 std_error = variance ** 0.5
 
+
+# --------------------------------------------------
+# Task 2 hedge improvement
+# --------------------------------------------------
+
+final_unhedged = pnl[-1]
+
+final_hedged = hedged_pnl[-1]
+
+loss_reduction = (
+    1.0
+    - abs(final_hedged)
+      / abs(final_unhedged)
+) * 100.0
+
+
 print("Plots generated successfully.")
+
 print()
-print("Terminal hedging error statistics:")
+print("Task 1 terminal hedging error statistics:")
 print("Number of paths:", len(hedging_errors))
 print("Mean:", mean_error)
 print("Standard deviation:", std_error)
 print("Minimum:", min(hedging_errors))
 print("Maximum:", max(hedging_errors))
+
+print()
+print("Task 2 GOOG results:")
+print("Final unhedged PNL:", final_unhedged)
+print("Final hedged PNL:", final_hedged)
+print(
+    "Absolute loss reduction:",
+    loss_reduction,
+    "%"
+)
