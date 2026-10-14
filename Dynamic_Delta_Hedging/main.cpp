@@ -503,42 +503,69 @@ int main()
         Required Task 2 columns.
     */
 
+    // result_file
+    //     << "date,"
+    //     << "stock_price,"
+    //     << "option_price,"
+    //     << "implied_volatility,"
+    //     << "delta,"
+    //     << "PNL,"
+    //     << "PNL_with_hedge"
+    //     << "\n";
     result_file
         << "date,"
         << "stock_price,"
         << "option_price,"
         << "implied_volatility,"
         << "delta,"
+        << "HE,"
         << "PNL,"
         << "PNL_with_hedge"
         << "\n";
-
 
     result_file
         << std::fixed
         << std::setprecision(8);
 
-
-    for (std::size_t i = 0;
-         i < goog_data.size();
-         i++)
-    {
-        result_file
-            << goog_data[i].date
-            << ","
-            << goog_stock_prices[i]
-            << ","
-            << goog_option_prices[i]
-            << ","
-            << goog_implied_vols[i]
-            << ","
-            << goog_deltas[i]
-            << ","
-            << goog_pnl[i]
-            << ","
-            << goog_hedged_pnl[i]
-            << "\n";
-    }
+    for (std::size_t i = 0; i < goog_data.size(); i++){
+    result_file
+        << goog_data[i].date
+        << ","
+        << goog_stock_prices[i]
+        << ","
+        << goog_option_prices[i]
+        << ","
+        << goog_implied_vols[i]
+        << ","
+        << goog_deltas[i]
+        << ","
+        << goog_hedged_pnl[i]   // HE
+        << ","
+        << goog_pnl[i]          // Unhedged PNL
+        << ","
+        << goog_hedged_pnl[i]   // PNL with hedge
+        << "\n";
+}
+    // for (std::size_t i = 0;
+    //      i < goog_data.size();
+    //      i++)
+    // {
+    //     result_file
+    //         << goog_data[i].date
+    //         << ","
+    //         << goog_stock_prices[i]
+    //         << ","
+    //         << goog_option_prices[i]
+    //         << ","
+    //         << goog_implied_vols[i]
+    //         << ","
+    //         << goog_deltas[i]
+    //         << ","
+    //         << goog_pnl[i]
+    //         << ","
+    //         << goog_hedged_pnl[i]
+    //         << "\n";
+    // }
 
 
     result_file.close();
