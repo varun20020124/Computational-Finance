@@ -157,14 +157,70 @@ def test_custom_trading_example():
     assert cumulative_pnl == -20.0
 
     print("Custom trading strategy test passed.")
-    
+
 # ============================================================
 # TASK 2: ENERGY MAZE
 # ============================================================
 
 def min_initial_energy(maze):
-    pass
+    rows, cols = maze.shape
 
+    # dp[i][j] = minimum energy needed when entering cell (i, j)
+    dp = np.zeros((rows, cols), dtype=int)
+
+    # Bottom-right cell
+    dp[rows - 1][cols - 1] = max(
+        1,
+        1 - maze[rows - 1][cols - 1]
+    )
+
+    # Last row: can only move right
+    for j in range(cols - 2, -1, -1):
+        dp[rows - 1][j] = max(
+            1,
+            dp[rows - 1][j + 1] - maze[rows - 1][j]
+        )
+
+    # Last column: can only move down
+    for i in range(rows - 2, -1, -1):
+        dp[i][cols - 1] = max(
+            1,
+            dp[i + 1][cols - 1] - maze[i][cols - 1]
+        )
+
+    # Remaining cells
+    for i in range(rows - 2, -1, -1):
+        for j in range(cols - 2, -1, -1):
+
+            minimum_next_energy = min(
+                dp[i + 1][j],
+                dp[i][j + 1]
+            )
+
+            dp[i][j] = max(
+                1,
+                minimum_next_energy - maze[i][j]
+            )
+
+    return dp[0][0]
+
+def test_custom_energy_maze():
+    custom_maze = np.array([
+        [1, -4,  5],
+        [-2, -3, -1]
+    ])
+
+    result = min_initial_energy(custom_maze)
+
+    assert result == 4
+
+    # Edge case: single positive cell
+    assert min_initial_energy(np.array([[5]])) == 1
+
+    # Edge case: single negative cell
+    assert min_initial_energy(np.array([[-5]])) == 6
+
+    print("Custom energy maze tests passed.")
 
 # ============================================================
 # MAIN / TESTS
@@ -212,3 +268,29 @@ if __name__ == "__main__":
     print("---------------------")
 
     trading_strategy("aapl.csv")
+
+        # --------------------------------------------------------
+    # Task 2: Professor's example
+    # --------------------------------------------------------
+
+    print("\nEnergy Maze - Professor's Example")
+    print("---------------------------------")
+
+    maze = np.array([
+        [-2, -3,  3],
+        [-5, -10, 1],
+        [10, 30, -5]
+    ])
+
+    initial_energy = min_initial_energy(maze)
+
+    print("Maze:")
+    print(maze)
+
+    print("\nMinimum Initial Energy:")
+    print(initial_energy)
+
+    print("\nCustom Task 2 Unit Test")
+    print("-----------------------")
+
+    test_custom_energy_maze()
