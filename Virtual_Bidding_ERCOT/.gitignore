@@ -1,0 +1,17 @@
+# Python environment
+.venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Professor-provided raw data
+lab2_data/
+lab2_data.zip
+
+# Intermediate files
+rt_hourly_cache.pkl
+
+# macOS
+.DS_Store
